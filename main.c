@@ -25,8 +25,6 @@ int num_of_rows_first_matrix, num_of_cols_first_matrix, num_of_rows_second_matri
 // var to check if input is the default case i.e. a.txt, b.txt, c.txt
 int is_default;
 
-
-// reading the input matrices and their dimensions from file
 // Reading the input matrices and their dimensions from file
 void read_matrices_from_file(int matrix[MAX][MAX], FILE* fptr, int is_matrix_a) {
     int row, col;
