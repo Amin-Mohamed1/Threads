@@ -6,6 +6,16 @@
 #include <string.h>
 
 
+#define RESET "\033[0m"
+#define BLACK "\033[30m"
+#define RED "\033[31m"
+#define GREEN "\033[32m"
+#define YELLOW "\033[33m"
+#define BLUE "\033[34m"
+#define MAGENTA "\033[35m"
+#define CYAN "\033[36m"
+#define WHITE "\033[37m"
+
 #define MAX 20
 
 struct entry{
@@ -77,7 +87,8 @@ void* thread_per_entire_matrix(){
     }
 }
 
-//calculate one row
+
+// thread for each row 
 void *thread_per_row(void *row_index){
     long i_index = (long)row_index;
     for(int j = 0; j < num_of_cols_second_matrix; j++){
@@ -87,26 +98,28 @@ void *thread_per_row(void *row_index){
     }
 }
 
-//calculate one element
+// thread for each element
 void *thread_per_element(void *element){
     struct entry *element_indeces;
     element_indeces = (struct entry *) element;
     int r = element_indeces->row, c = element_indeces->col;
     output_matrix_c_per_element[r][c] = 0;
-    for(int k=0; k< num_of_rows_second_matrix ;k++)
+    for(int k = 0; k < num_of_rows_second_matrix ;k++)
         output_matrix_c_per_element[r][c] += input_matrix_a[r][k] * input_matrix_b[k][c];
 }
 
-//making thread for case1
 void construct_thread_per_entire_matrix(){
     struct timeval stop, start;
     gettimeofday(&start, NULL);
     thread_per_entire_matrix();
     gettimeofday(&stop, NULL);
 
-    printf("Seconds taken %lu\n", stop.tv_sec - start.tv_sec);
-    printf("Microseconds taken: %lu\n", stop.tv_usec - start.tv_usec);
-    printf("Number of Threads Created: 1 Thread\n");
+    long long time_taken_sec = stop.tv_sec - start.tv_sec;
+    long long time_taken_usec = stop.tv_usec - start.tv_usec;
+    printf(GREEN "Seconds: %lld.%06lld\n", time_taken_sec, time_taken_usec);
+    printf(BLUE "Microseconds: %lld\n", time_taken_sec * 1000000 + time_taken_usec);
+    printf(MAGENTA "Number of Threads Created: 1 Thread\n");
+    printf("\n");
     fprintf(fptr_c[0], "Method: A thread per matrix\n");
     write_matrices_in_file(output_matrix_c_per_matrix,fptr_c[0]);
 }
@@ -123,9 +136,12 @@ void construct_thread_per_row(){
         pthread_join(threads[i], NULL);
 
     gettimeofday(&stop, NULL);
-    printf("Seconds taken %lu\n", stop.tv_sec - start.tv_sec);
-    printf("Microseconds taken: %lu\n", stop.tv_usec - start.tv_usec);
-    printf("Number of Threads Created: %d Thread\n",num_of_rows_first_matrix);
+    long long time_taken_sec = stop.tv_sec - start.tv_sec;
+    long long time_taken_usec = stop.tv_usec - start.tv_usec;
+    printf(GREEN "Seconds: %lld.%06lld\n", time_taken_sec, time_taken_usec);
+    printf(BLUE "Microseconds: %lld\n", time_taken_sec * 1000000 + time_taken_usec);
+    printf(MAGENTA "Number of Threads Created: %d Thread\n",num_of_rows_first_matrix);
+    printf("\n");
     fprintf(fptr_c[1], "Method: A thread per row\n");
     write_matrices_in_file(output_matrix_c_per_row,fptr_c[1]);
 }
@@ -146,43 +162,62 @@ void construct_thread_per_element(){
             pthread_join(threads[i][j], NULL);
 
     gettimeofday(&stop, NULL);
-    printf("Seconds taken %lu\n", stop.tv_sec - start.tv_sec);
-    printf("Microseconds taken: %lu\n", stop.tv_usec - start.tv_usec);
-    printf("Number of Threads Created: %d Threads\n",num_of_rows_first_matrix * num_of_cols_second_matrix);
+
+    long long time_taken_sec = stop.tv_sec - start.tv_sec;
+    long long time_taken_usec = stop.tv_usec - start.tv_usec;
+    printf(GREEN "Seconds: %lld.%06lld\n", time_taken_sec, time_taken_usec);
+    printf(BLUE "Microseconds: %lld\n", time_taken_sec * 1000000 + time_taken_usec);
+    printf(MAGENTA "Number of Threads Created: %d Threads\n",num_of_rows_first_matrix * num_of_cols_second_matrix);
+    printf(WHITE "\n");
     fprintf(fptr_c[2], "Method: A thread per element\n");
     write_matrices_in_file(output_matrix_c_per_element,fptr_c[2]);
 }
 
 
-void files(char* names[]) {
+void initialize_files(char* names[]) {
+
+    char fname[1000];
+
     if (!is_default) {
-        for (int i = 1; i < 4; i++) {
-            char filename[1024];
-            snprintf(filename, sizeof(filename), "%s%s", names[i], (i == 3) ? "_per_matrix.txt" : ".txt");
-            fptr_c[i-1] = fopen(filename, (i == 1) ? "r" : "w+");
-        }
+        snprintf(fname, sizeof(fname), "%s.txt", names[1]);
+        fptr_a = fopen(fname, "r");
+
+        snprintf(fname, sizeof(fname), "%s.txt", names[2]);
+        fptr_b = fopen(fname, "r");
+
+        snprintf(fname, sizeof(fname), "%s_per_matrix.txt", names[3]);
+        fptr_c[0] = fopen(fname, "w+");
+
+        snprintf(fname, sizeof(fname), "%s_per_row.txt", names[3]);
+        fptr_c[1] = fopen(fname, "w+");
+
+        snprintf(fname, sizeof(fname), "%s_per_element.txt", names[3]);
+        fptr_c[2] = fopen(fname, "w+");
+
     } else {
+
         fptr_a = fopen("a.txt", "r");
         fptr_b = fopen("b.txt", "r");
-        for (int i = 1; i < 4; i++) {
-            fptr_c[i-1] = fopen((i == 1) ? "c_per_matrix.txt" : (i == 2) ? "c_per_row.txt" : "c_per_element.txt", "w+");
-        }
+        fptr_c[0] = fopen("c_per_matrix.txt", "w+");
+        fptr_c[1] = fopen("c_per_row.txt", "w+");
+        fptr_c[2] = fopen("c_per_element.txt", "w+");
+
     }
 }
 
 
 int main(int argC, char* args[]){   
-    is_default = !(argC == 4);
-    files(args);
+    is_default = (argC != 4);
+    initialize_files(args);
 
     if(!fptr_a || !fptr_b){
-        printf("Cannot find files :(\n");
+        printf(RED "Cannot find files :(\n");
     }
     else{
         read_matrices_from_file(input_matrix_a, fptr_a, 1);
         read_matrices_from_file(input_matrix_b, fptr_b, 0);
         if(num_of_cols_first_matrix != num_of_rows_second_matrix){
-            printf("these matrices can't be multiplied!");
+            printf(RED "these matrices can't be multiplied!");
         }
         else {
             construct_thread_per_entire_matrix();
